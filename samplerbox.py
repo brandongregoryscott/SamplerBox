@@ -9,17 +9,7 @@
 #
 
 
-#########################################
-# LOCAL
-# CONFIG
-#########################################
 
-AUDIO_DEVICE_ID = 2                     # change this number to use another soundcard
-SAMPLES_DIR = "."                       # The root directory containing the sample-sets. Example: "/media/" to look for samples on a USB stick / SD card
-USE_SERIALPORT_MIDI = False             # Set to True to enable MIDI IN via SerialPort (e.g. RaspberryPi's GPIO UART pins)
-USE_I2C_7SEGMENTDISPLAY = False         # Set to True to use a 7-segment display via I2C
-USE_BUTTONS = False                     # Set to True to use momentary buttons (connected to RaspberryPi's GPIO pins) to change preset
-MAX_POLYPHONY = 80                      # This can be set higher, but 80 is a safe value
 
 
 #########################################
@@ -38,6 +28,20 @@ from chunk import Chunk
 import struct
 import rtmidi_python as rtmidi
 import samplerbox_audio
+import config
+
+#########################################
+# LOCAL
+# CONFIG
+#########################################
+
+AUDIO_DEVICE_ID = config.AUDIO_DEVICE_ID                     # change this number to use another soundcard
+SAMPLES_DIR = config.SAMPLES_DIR                       # The root directory containing the sample-sets. Example: "/media/" to look for samples on a USB stick / SD card
+USE_SERIALPORT_MIDI = config.USE_SERIALPORT_MIDI             # Set to True to enable MIDI IN via SerialPort (e.g. RaspberryPi's GPIO UART pins)
+USE_I2C_7SEGMENTDISPLAY = config.USE_I2C_7SEGMENTDISPLAY         # Set to True to use a 7-segment display via I2C
+USE_BUTTONS = config.USE_BUTTONS                     # Set to True to use momentary buttons (connected to RaspberryPi's GPIO pins) to change preset
+MAX_POLYPHONY = config.MAX_POLYPHONY                      # This can be set higher, but 80 is a safe value
+
 
 
 #########################################
