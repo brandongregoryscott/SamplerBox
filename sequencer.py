@@ -3,11 +3,19 @@ import datetime
 import time
 import random
 from time import sleep
+import json
 
 
 class MidiSequence:
     def __init__(self):
         self.events = []
+        self.playing = False
+
+    def __str__(self):
+        this = []
+        for event in self.events:
+            this.append(event.__dict__)
+        return str(this)
 
 class MidiEvent:
     def __init__(self, cmd, note, velocity, timestamp, sleeptime):
@@ -18,13 +26,14 @@ class MidiEvent:
         self.sleeptime = sleeptime
 
     def play(self):
-        print('Playing event')
         sleep(self.sleeptime.seconds + self.sleeptime.microseconds / 1000000.0)
         if self.cmd == NOTE_ON:
             mpk_mini.send_noteon(1, self.note, self.velocity)
         elif self.cmd == NOTE_OFF:
             mpk_mini.send_noteoff(1, self.note)
 
+    def __str__(self):
+        return str(self.__dict__)
 
 SRC_CMD_TOUCH = ['CMD Touch']
 SRC_MPK_MINI = ['LPK25', 'MPKmini2', 'VMPK Output']
@@ -34,7 +43,7 @@ SEQUENCES = dict()
 LED = {
     'RED': 79,
     'YELLOW': 63,
-    'GREEN': 1,
+    'GREEN': 32,
     'OFF': 64
 }
 CHANNEL = 0
@@ -79,6 +88,8 @@ def callback(src, msg, ts):
             elif CURRENT_MODE == RECORDING_MODE:
                 if len(RECORDING_SEQUENCE.events) > 0:
                     print('Finished recording sequence')
+                    print(str(RECORDING_SEQUENCE))
+                    RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
                     set_record_mode(SEQUENCE_PENDING_MODE)
                 else:
                     print('No events recorded. Going back to standby')
@@ -92,6 +103,11 @@ def callback(src, msg, ts):
                 print('Assigning sequence to {}'.format(note))
                 SEQUENCES[note] = RECORDING_SEQUENCE
                 cmd_touch.send_noteon(CHANNEL, note, LED['YELLOW'])
+        if CURRENT_MODE == STANDBY_MODE:
+            if cmd == NOTE_ON and note in SQUARE_PADS and velocity == 127:
+                if note in SEQUENCES.keys():
+                    set_sequence_status(note)
+
     if CURRENT_MODE == RECORDING_MODE and src in SRC_MPK_MINI:
         sleeptime = ts - ts
         if len(RECORDING_SEQUENCE.events) > 0:
@@ -152,6 +168,12 @@ def set_record_mode(mode):
     # print('Setting current mode to {}'.format(CURRENT_MODE))
     cmd_touch.send_noteon(CHANNEL, RECORD_BUTTON, mode)
 
+def set_sequence_status(pad):
+    SEQUENCES[pad].playing = not SEQUENCES[pad].playing
+    if SEQUENCES[pad].playing:
+        cmd_touch.send_noteon(CHANNEL, pad, LED['GREEN'])
+    else:
+        cmd_touch.send_noteon(CHANNEL, pad, LED['YELLOW'])
 
 def initialize():
     initialize_pads()
@@ -162,5 +184,6 @@ def initialize():
 initialize()
 while True:
     for pad, sequence in SEQUENCES.items():
-        for event in sequence.events:
-            event.play()
+        if sequence.playing:
+            for event in sequence.events:
+                event.play()
