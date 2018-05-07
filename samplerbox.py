@@ -41,6 +41,7 @@ USE_SERIALPORT_MIDI = config.USE_SERIALPORT_MIDI             # Set to True to en
 USE_I2C_7SEGMENTDISPLAY = config.USE_I2C_7SEGMENTDISPLAY         # Set to True to use a 7-segment display via I2C
 USE_BUTTONS = config.USE_BUTTONS                     # Set to True to use momentary buttons (connected to RaspberryPi's GPIO pins) to change preset
 MAX_POLYPHONY = config.MAX_POLYPHONY                      # This can be set higher, but 80 is a safe value
+IGNORE_PORTS = config.IGNORE_PORTS # MIDI Ports to ignore input from
 
 
 
@@ -192,10 +193,12 @@ def AudioCallback(outdata, frame_count, time_info, status):
     outdata[:] = b.reshape(outdata.shape)
 
 def MidiCallback(message, time_stamp):
+
     global playingnotes, sustain, sustainplayingnotes
     global preset
     messagetype = message[0] >> 4
     messagechannel = (message[0] & 15) + 1
+    print('SamplerBox: {} channel {}'.format(message, messagechannel))
     note = message[1] if len(message) > 1 else None
     midinote = note
     velocity = message[2] if len(message) > 2 else None
@@ -479,10 +482,11 @@ midi_in = [rtmidi.MidiIn()]
 previous = []
 while True:
     for port in midi_in[0].ports:
-        if port not in previous and 'Midi Through' not in port:
+        if port not in previous and port not in IGNORE_PORTS:
             midi_in.append(rtmidi.MidiIn())
             midi_in[-1].callback = MidiCallback
             midi_in[-1].open_port(port)
+            midi_in[-1].open_virtual_port('SamplerBoxLoop')
             print 'Opened MIDI: ' + port
     previous = midi_in[0].ports
     time.sleep(2)
