@@ -52,73 +52,53 @@ cmd_touch.open_port(0)
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
 
-
-
-def callback(src, msg, ts):
+def cmd_touch_handler(cmd, note, velocity, timestamp):
     global CURRENT_MODE
     global RECORDING_SEQUENCE
+    if cmd == NOTE.On and note == BUTTON.Record and velocity == 127:
+        if CURRENT_MODE == MODE.Standby:
+            set_record_mode(MODE.Record)
+        elif CURRENT_MODE == MODE.Record:
+            if len(RECORDING_SEQUENCE.events) > 0:
+                print('Finished recording sequence')
+                print(str(RECORDING_SEQUENCE))
+                RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
+                set_record_mode(MODE.Pending)
+            else:
+                print('No events recorded. Going back to standby')
+                set_record_mode(MODE.Standby)
+        elif CURRENT_MODE == MODE.Pending:
+            print('Erasing sequence')
+            RECORDING_SEQUENCE = MidiSequence()
+            set_record_mode(MODE.Standby)
+    if CURRENT_MODE == MODE.Pending:
+        if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
+            print('Assigning sequence to {}'.format(note))
+            SEQUENCES[note] = RECORDING_SEQUENCE
+            cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
+    if CURRENT_MODE == MODE.Standby:
+        if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
+            if note in SEQUENCES.keys():
+                set_sequence_status(note)
+
+
+def mpk_mini_handler(cmd, note, velocity, timestamp):
+    if CURRENT_MODE == MODE.Record:
+        sleeptime = timestamp - timestamp
+        if len(RECORDING_SEQUENCE.events) > 0:
+            sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
+        RECORDING_SEQUENCE.events.append(MidiEvent(cmd, note, velocity, timestamp, sleeptime))
+
+def callback(src, msg, ts):
     cmd = msg[0]
     note = msg[1]
-    if len(msg) > 2:
-        velocity = msg[2]
-    ts = datetime.datetime.now()
-    print(src, msg, str(ts))
+    velocity = msg[2] if len(msg) > 2 else 0
+    timestamp = datetime.datetime.now()
+    print(src, msg, str(timestamp))
     if src in SRC_CMD_TOUCH:
-        # (u'CMD Touch', [144, 108, 127], '2018-04-07 15:59:04')
-        # MSG[0] IS ALWAYS 144
-        # MSG[1] IS THE NOTE
-        # MSG[2] IS THE VELOCITY - 127 IS ON, 0 IS OFF
-        # 1-63 is green -> yellow
-        # 64 is off
-        # 65-79 is red
-        if cmd == NOTE.On and note == BUTTON.Record and velocity == 127:
-            if CURRENT_MODE == MODE.Standby:
-                set_record_mode(MODE.Record)
-            elif CURRENT_MODE == MODE.Record:
-                if len(RECORDING_SEQUENCE.events) > 0:
-                    print('Finished recording sequence')
-                    print(str(RECORDING_SEQUENCE))
-                    RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
-                    set_record_mode(MODE.Pending)
-                else:
-                    print('No events recorded. Going back to standby')
-                    set_record_mode(MODE.Standby)
-            elif CURRENT_MODE == MODE.Pending:
-                print('Erasing sequence')
-                RECORDING_SEQUENCE = MidiSequence()
-                set_record_mode(MODE.Standby)
-        if CURRENT_MODE == MODE.Pending:
-            if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
-                print('Assigning sequence to {}'.format(note))
-                SEQUENCES[note] = RECORDING_SEQUENCE
-                cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
-        if CURRENT_MODE == MODE.Standby:
-            if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
-                if note in SEQUENCES.keys():
-                    set_sequence_status(note)
-
-    if CURRENT_MODE == MODE.Record and src in SRC_MPK_MINI:
-        sleeptime = ts - ts
-        if len(RECORDING_SEQUENCE.events) > 0:
-            sleeptime = ts - RECORDING_SEQUENCE.events[-1].timestamp
-        RECORDING_SEQUENCE.events.append(MidiEvent(cmd, note, velocity, ts, sleeptime))
-
-                # cmd_touch.send_noteoff(0, note)
-        # if cmd == CMD_TOUCH_NOTE.On and note == BUTTON.Record and velocity == 0:
-
-            # midi_out.send_noteon(0, msg[1], random.randint(0, 127))
-            # for i in range(80, 85):
-            #     sleep(0.5)
-            #     cmd_touch.send_noteon(0, msg[1], i)
-
-
-        # print("From cmd touch")
-    # if msg[0] == 144:
-    #     midi_out.send()
-    # if src == 'nanoKONTROL2 SLIDER/KNOB':
-    #     if msg[0] == 176 and msg[2] == 127:
-    #         if msg[1] in [58, 59, 60, 46, 43, 44, 42, 41, 45]:
-
+        cmd_touch_handler(cmd, note, velocity, timestamp)
+    elif src in SRC_MPK_MINI:
+        mpk_mini_handler(cmd, note, velocity, timestamp)
 
 midi_in = rtmidi2.MidiInMulti().open_ports("*")
 midi_in.callback = callback
