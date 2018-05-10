@@ -51,36 +51,50 @@ cmd_touch.open_port(0)
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
 
-def cmd_touch_handler(cmd, note, velocity, timestamp):
+def record_button_handler(cmd, note, velocity, timestamp):
     global CURRENT_MODE
     global RECORDING_SEQUENCE
+    if CURRENT_MODE == MODE.Standby:
+        set_current_mode(BUTTON.Record, MODE.Record)
+    elif CURRENT_MODE == MODE.Record:
+        if len(RECORDING_SEQUENCE.events) > 0:
+            print('Finished recording sequence')
+            print(str(RECORDING_SEQUENCE))
+            RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
+            set_current_mode(BUTTON.Record, MODE.Pending)
+        else:
+            print('No events recorded. Going back to standby')
+            set_current_mode(BUTTON.Record, MODE.Standby)
+    elif CURRENT_MODE == MODE.Pending:
+        print('Erasing sequence')
+        RECORDING_SEQUENCE = MidiSequence()
+        set_current_mode(BUTTON.Record, MODE.Standby)
+
+
+def square_pad_handler(cmd, note, velocity, timestamp):
+    global CURRENT_MODE
+    global RECORDING_SEQUENCE
+    if CURRENT_MODE == MODE.Pending:
+        print('Assigning sequence to {}'.format(note))
+        SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
+        cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
+    if CURRENT_MODE == MODE.Standby:
+        if note in SEQUENCES.keys():
+            set_sequence_status(note)
+
+
+BUTTON_SWITCH = {
+    BUTTON.Record: record_button_handler,
+}
+
+def cmd_touch_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
-    if note == BUTTON.Record:
-        if CURRENT_MODE == MODE.Standby:
-            set_current_mode(BUTTON.Record, MODE.Record)
-        elif CURRENT_MODE == MODE.Record:
-            if len(RECORDING_SEQUENCE.events) > 0:
-                print('Finished recording sequence')
-                print(str(RECORDING_SEQUENCE))
-                RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
-                set_current_mode(BUTTON.Record, MODE.Pending)
-            else:
-                print('No events recorded. Going back to standby')
-                set_current_mode(BUTTON.Record, MODE.Standby)
-        elif CURRENT_MODE == MODE.Pending:
-            print('Erasing sequence')
-            RECORDING_SEQUENCE = MidiSequence()
-            set_current_mode(BUTTON.Record, MODE.Standby)
-    if CURRENT_MODE == MODE.Pending:
-        if note in SQUARE_PADS:
-            print('Assigning sequence to {}'.format(note))
-            SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
-            cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
-    if CURRENT_MODE == MODE.Standby:
-        if note in SQUARE_PADS:
-            if note in SEQUENCES.keys():
-                set_sequence_status(note)
+    try:
+        BUTTON_SWITCH[note](cmd, note, velocity, timestamp)
+    except KeyError:
+        # If the note is not in the button switch, it must be a square pad
+        square_pad_handler(cmd, note, velocity, timestamp)
 
 
 def mpk_mini_handler(cmd, note, velocity, timestamp):
