@@ -3,6 +3,7 @@ import datetime
 import time
 from time import sleep
 from enums import LED, BUTTON, NOTE, MODE
+import copy
 
 class MidiSequence:
     def __init__(self):
@@ -72,7 +73,7 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
     if CURRENT_MODE == MODE.Pending:
         if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
             print('Assigning sequence to {}'.format(note))
-            SEQUENCES[note] = RECORDING_SEQUENCE
+            SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
             cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
     if CURRENT_MODE == MODE.Standby:
         if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
@@ -132,7 +133,6 @@ def flash_leds(pads, color, count=5, delay=0.3):
 def set_current_mode(button, mode):
     global CURRENT_MODE
     CURRENT_MODE = mode
-    # print('Setting current mode to {}'.format(CURRENT_MODE))
     cmd_touch.send_noteon(CHANNEL, button, mode)
 
 def set_sequence_status(pad):
@@ -146,7 +146,6 @@ def initialize():
     initialize_pads()
     flash_leds(ALL_PADS, LED.Green, 2)
     for button in BUTTON:
-        print('Setting button {}'.format(button))
         set_current_mode(button, MODE.Standby)
 
 
