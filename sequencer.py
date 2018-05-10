@@ -1,9 +1,7 @@
 import rtmidi2
 import datetime
 import time
-import random
 from time import sleep
-import json
 from enums import LED, BUTTON, NOTE, MODE
 
 class MidiSequence:
@@ -57,20 +55,20 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
     global RECORDING_SEQUENCE
     if cmd == NOTE.On and note == BUTTON.Record and velocity == 127:
         if CURRENT_MODE == MODE.Standby:
-            set_record_mode(MODE.Record)
+            set_current_mode(BUTTON.Record, MODE.Record)
         elif CURRENT_MODE == MODE.Record:
             if len(RECORDING_SEQUENCE.events) > 0:
                 print('Finished recording sequence')
                 print(str(RECORDING_SEQUENCE))
                 RECORDING_SEQUENCE.events[0].sleeptime = RECORDING_SEQUENCE.events[-1].sleeptime
-                set_record_mode(MODE.Pending)
+                set_current_mode(BUTTON.Record, MODE.Pending)
             else:
                 print('No events recorded. Going back to standby')
-                set_record_mode(MODE.Standby)
+                set_current_mode(BUTTON.Record, MODE.Standby)
         elif CURRENT_MODE == MODE.Pending:
             print('Erasing sequence')
             RECORDING_SEQUENCE = MidiSequence()
-            set_record_mode(MODE.Standby)
+            set_current_mode(BUTTON.Record, MODE.Standby)
     if CURRENT_MODE == MODE.Pending:
         if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
             print('Assigning sequence to {}'.format(note))
@@ -131,11 +129,11 @@ def flash_leds(pads, color, count=5, delay=0.3):
         sleep(delay)
 
 
-def set_record_mode(mode):
+def set_current_mode(button, mode):
     global CURRENT_MODE
     CURRENT_MODE = mode
     # print('Setting current mode to {}'.format(CURRENT_MODE))
-    cmd_touch.send_noteon(CHANNEL, BUTTON.Record, mode)
+    cmd_touch.send_noteon(CHANNEL, button, mode)
 
 def set_sequence_status(pad):
     SEQUENCES[pad].playing = not SEQUENCES[pad].playing
@@ -147,7 +145,9 @@ def set_sequence_status(pad):
 def initialize():
     initialize_pads()
     flash_leds(ALL_PADS, LED.Green, 2)
-    set_record_mode(MODE.Standby)
+    for button in BUTTON:
+        print('Setting button {}'.format(button))
+        set_current_mode(button, MODE.Standby)
 
 
 initialize()

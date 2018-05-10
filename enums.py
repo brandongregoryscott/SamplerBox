@@ -1,27 +1,27 @@
-from enum import Enum
+from enum import IntEnum
 
 # Enum to hold LED MIDI values
-class LED(Enum):
-    Red = 79
-    Yellow = 63
-    Green = 32
-    Off = 64, 0
+class LED(IntEnum):
+    Red = int(79)
+    Yellow = int(63)
+    Green = int(32)
+    Off = int(64)
 
 # Enum to hold modifier button representations
-class BUTTON(Enum):
-    Record = 116
-    Edit = 104
+class BUTTON(IntEnum):
+    Record = int(116)
+    Edit = int(104)
 
 # Enum to hold mode representations
-class MODE(Enum):
+class MODE(IntEnum):
     # Currently recording input from keyboard to build a sequence
-    Record = 79
+    Record = int(79)
     # No mode selected
-    Standby = 1
+    Standby = int(1)
     # Sequence is pending and can be assigned to pads
-    Pending = 63
+    Pending = int(63)
 
 # Enum to hold on/off MIDI values
-class NOTE(Enum):
-    On = 144
-    Off = 128
+class NOTE(IntEnum):
+    On = int(144)
+    Off = int(128)
