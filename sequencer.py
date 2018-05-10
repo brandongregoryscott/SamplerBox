@@ -54,7 +54,9 @@ mpk_mini.open_port('SamplerBoxLoop')
 def cmd_touch_handler(cmd, note, velocity, timestamp):
     global CURRENT_MODE
     global RECORDING_SEQUENCE
-    if cmd == NOTE.On and note == BUTTON.Record and velocity == 127:
+    if velocity == 0:
+        return
+    if note == BUTTON.Record:
         if CURRENT_MODE == MODE.Standby:
             set_current_mode(BUTTON.Record, MODE.Record)
         elif CURRENT_MODE == MODE.Record:
@@ -71,12 +73,12 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
             RECORDING_SEQUENCE = MidiSequence()
             set_current_mode(BUTTON.Record, MODE.Standby)
     if CURRENT_MODE == MODE.Pending:
-        if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
+        if note in SQUARE_PADS:
             print('Assigning sequence to {}'.format(note))
             SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
             cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
     if CURRENT_MODE == MODE.Standby:
-        if cmd == NOTE.On and note in SQUARE_PADS and velocity == 127:
+        if note in SQUARE_PADS:
             if note in SEQUENCES.keys():
                 set_sequence_status(note)
 
