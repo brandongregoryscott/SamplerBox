@@ -4,7 +4,6 @@ import time
 from time import sleep
 from enums import LED, NOTE, MODE
 import copy
-import constants
 
 class MidiSequence:
     def __init__(self):
@@ -42,12 +41,11 @@ CIRCULAR_PADS, SQUARE_PADS, ALL_PADS = [], [], []
 SEQUENCES = dict()
 
 CHANNEL = 0
-CURRENT_MODE = MODE.RECORD.Standby
+
 RECORDING_SEQUENCE = MidiSequence()
 
-
 cmd_touch = rtmidi2.MidiOut()
-cmd_touch.open_port(0)
+cmd_touch.open_port(1)
 
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
@@ -55,9 +53,9 @@ mpk_mini.open_port('SamplerBoxLoop')
 def record_button_handler(cmd, note, velocity, timestamp):
     global CURRENT_MODE
     global RECORDING_SEQUENCE
-    if CURRENT_MODE == MODE.RECORD.Standby:
+    if CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Standby:
         set_current_mode(MODE.RECORD, MODE.RECORD.Record)
-    elif CURRENT_MODE == MODE.RECORD.Record:
+    elif CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Record:
         if len(RECORDING_SEQUENCE.events) > 0:
             print('Finished recording sequence')
             print(str(RECORDING_SEQUENCE))
@@ -66,29 +64,38 @@ def record_button_handler(cmd, note, velocity, timestamp):
         else:
             print('No events recorded. Going back to standby')
             set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
-    elif CURRENT_MODE == MODE.RECORD.Pending:
+    elif CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Pending:
         print('Erasing sequence')
         RECORDING_SEQUENCE = MidiSequence()
         set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
 
 def edit_button_handler(cmd, note, velocity, timestamp):
-    pass
+    print("In edit button handler: {} {} {} {}".format(cmd, note, velocity, timestamp))
+
+def select_button_handler(cmd, note, velocity, timestamp):
+    print("In select button handler: {} {} {} {}".format(cmd, note, velocity, timestamp))
 
 def square_pad_handler(cmd, note, velocity, timestamp):
     global CURRENT_MODE
     global RECORDING_SEQUENCE
-    if CURRENT_MODE == MODE.RECORD.Pending:
+    if CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Pending:
         print('Assigning sequence to {}'.format(note))
         SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
         cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
-    if CURRENT_MODE == MODE.RECORD.Standby:
+    if CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Standby:
         if note in SEQUENCES.keys():
             set_sequence_status(note)
 
+CURRENT_MODE = {
+    int(MODE.RECORD): MODE.RECORD.Standby,
+    int(MODE.EDIT): MODE.RECORD.Standby,
+    int(MODE.SELECT): MODE.SELECT.Standby
+}
 
 BUTTON_SWITCH = {
-    MODE.RECORD: record_button_handler,
-    # BUTTON.Edit: edit_button_handler
+    int(MODE.RECORD): record_button_handler,
+    int(MODE.EDIT): edit_button_handler,
+    int(MODE.SELECT): select_button_handler
 }
 
 def cmd_touch_handler(cmd, note, velocity, timestamp):
@@ -102,7 +109,7 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
 
 
 def mpk_mini_handler(cmd, note, velocity, timestamp):
-    if CURRENT_MODE == MODE.RECORD.Record:
+    if CURRENT_MODE[MODE.RECORD] == MODE.RECORD.Record:
         sleeptime = timestamp - timestamp
         if len(RECORDING_SEQUENCE.events) > 0:
             sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
@@ -152,7 +159,7 @@ def flash_leds(pads, color, count=5, delay=0.3):
 
 def set_current_mode(button, mode):
     global CURRENT_MODE
-    CURRENT_MODE = mode
+    CURRENT_MODE[button] = mode
     cmd_touch.send_noteon(CHANNEL, button, mode)
 
 def set_sequence_status(pad):
@@ -167,6 +174,7 @@ def initialize():
     flash_leds(ALL_PADS, LED.Green, 2)
     set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
     set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
+    set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
 
 
 initialize()

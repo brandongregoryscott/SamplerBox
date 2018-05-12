@@ -41,10 +41,20 @@ class EDIT:
         # Returns the integer representation of the mode button
         return int(104)
 
+class SELECT:
+    def __init__(self):
+        self.Standby = LED.DimGreen
+        self.Select = LED.DimGreenYellow
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(92)
+
 # Enum to hold mode representations
 class MODE:
     RECORD = RECORD()
     EDIT = EDIT()
+    SELECT = SELECT()
 
 # Enum to hold on/off MIDI values
 class NOTE(IntEnum):
