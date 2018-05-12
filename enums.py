@@ -8,19 +8,30 @@ class LED(IntEnum):
     Green = int(32)
     Off = int(64)
 
-# Enum to hold modifier button representations
-class BUTTON(IntEnum):
-    Record = int(116)
-    Edit = int(104)
+class RECORD:
+    def __init__(self):
+        self.Standby = LED.DimRed
+        # Currently recording input from keyboard to build a sequence
+        self.Record = LED.Red
+        # Sequence is pending and can be assigned to pads
+        self.Pending = LED.Yellow
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(116)
+
+class EDIT:
+    def __init__(self):
+        self.Standby = LED.Yellow
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(104)
 
 # Enum to hold mode representations
-class MODE(IntEnum):
-    # Currently recording input from keyboard to build a sequence
-    Record = LED.Red
-    # No mode selected
-    Standby = LED.DimRed
-    # Sequence is pending and can be assigned to pads
-    Pending = LED.Yellow
+class MODE:
+    RECORD = RECORD()
+    EDIT = EDIT()
 
 # Enum to hold on/off MIDI values
 class NOTE(IntEnum):
