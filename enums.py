@@ -19,6 +19,12 @@ class LED(IntEnum):
     GreenYellow = int(49)
     YellowGreen = int(50)
 
+class PAD(IntEnum):
+    Playing = LED.Green
+    On = LED.DimGreen
+    Off = LED.DimYellow
+    Unassigned = LED.Off
+    Selected = LED.Yellow
 
 
 class RECORD:

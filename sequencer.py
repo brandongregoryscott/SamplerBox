@@ -2,13 +2,14 @@ import rtmidi2
 import datetime
 import time
 from time import sleep
-from enums import LED, NOTE, MODE
+from enums import LED, NOTE, MODE, PAD
 import copy
 
 class MidiSequence:
     def __init__(self):
         self.events = []
         self.playing = False
+        self.status = PAD.Unassigned
 
     def __str__(self):
         this = []
@@ -43,7 +44,7 @@ SEQUENCES = dict()
 CHANNEL = 0
 
 RECORDING_SEQUENCE = MidiSequence()
-SELECTED_SEQUENCES = []
+SELECTED_SEQUENCES = set()
 
 cmd_touch = rtmidi2.MidiOut()
 cmd_touch.open_port(1)
@@ -91,7 +92,20 @@ def square_pad_handler(cmd, note, velocity, timestamp):
     if MODE.RECORD.Pending in CURRENT_MODE.values():
         print('Assigning sequence to {}'.format(note))
         SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
-        cmd_touch.send_noteon(CHANNEL, note, LED.Yellow)
+        set_pad_status(note, PAD.Off)
+    elif MODE.SELECT.Select in CURRENT_MODE.values():
+        if note in SEQUENCES.keys():
+            if SEQUENCES[note].status == PAD.Selected:
+                print('Unselecting sequence {}'.format(note))
+                SELECTED_SEQUENCES.remove(note)
+                set_pad_status(note, PAD.Off)
+            else:
+                print('Selecting sequence {}'.format(note))
+                SELECTED_SEQUENCES.add(note)
+                set_pad_status(note, PAD.Selected)
+            print('Selected sequences: {}'.format(SELECTED_SEQUENCES))
+        else:
+            print('No sequence at pad {}'.format(note))
     # Commenting out the play/pause toggle until the selection is sorted out
     # if MODE.RECORD.Standby in CURRENT_MODE.values():
     #     if note in SEQUENCES.keys():
@@ -172,12 +186,10 @@ def set_current_mode(mode, status):
     CURRENT_MODE[mode] = status
     cmd_touch.send_noteon(CHANNEL, mode, status)
 
-def set_sequence_status(pad):
-    SEQUENCES[pad].playing = not SEQUENCES[pad].playing
-    if SEQUENCES[pad].playing:
-        cmd_touch.send_noteon(CHANNEL, pad, LED.Green)
-    else:
-        cmd_touch.send_noteon(CHANNEL, pad, LED.Yellow)
+def set_pad_status(pad, status):
+    cmd_touch.send_noteon(CHANNEL, pad, status)
+    SEQUENCES[pad].status = status
+
 
 def initialize():
     initialize_pads()
