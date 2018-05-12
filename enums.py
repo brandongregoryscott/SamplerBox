@@ -2,11 +2,24 @@ from enum import IntEnum
 
 # Enum to hold LED MIDI values
 class LED(IntEnum):
+    Off = int(0)
     DimRed = int(1)
-    Red = int(79)
-    Yellow = int(63)
+    Red = int(2)
+    BrightRed = int(3)
+    DimGreen = int(16)
     Green = int(32)
-    Off = int(64)
+    BrightGreen = int(48)
+    DimYellow = int(17)
+    Yellow = int(34)
+    BrightYellow = int(51)
+    DimOrange = int(18)
+    RedOrange = int(19)
+    Orange = int(35)
+    DimGreenYellow = int(33)
+    GreenYellow = int(49)
+    YellowGreen = int(50)
+
+
 
 class RECORD:
     def __init__(self):
@@ -22,7 +35,7 @@ class RECORD:
 
 class EDIT:
     def __init__(self):
-        self.Standby = LED.Yellow
+        self.Standby = LED.DimYellow
 
     def __trunc__(self):
         # Returns the integer representation of the mode button
