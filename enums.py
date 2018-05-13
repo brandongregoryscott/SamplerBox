@@ -56,11 +56,52 @@ class SELECT:
         # Returns the integer representation of the mode button
         return int(92)
 
+class UP:
+    def __init__(self):
+        self.Standby = LED.DimOrange
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(12)
+
+class DOWN:
+    def __init__(self):
+        self.Standby = LED.DimOrange
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(13)
+
+class LEFT:
+    def __init__(self):
+        self.Standby = LED.DimOrange
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(14)
+
+class RIGHT:
+    def __init__(self):
+        self.Standby = LED.DimOrange
+
+    def __trunc__(self):
+        # Returns the integer representation of the mode button
+        return int(15)
+
+# Enum to hold directional pads
+class ARROW:
+    UP = UP()
+    DOWN = DOWN()
+    LEFT = LEFT()
+    RIGHT = RIGHT()
+
+
 # Enum to hold mode representations
 class MODE:
     RECORD = RECORD()
     EDIT = EDIT()
     SELECT = SELECT()
+
 
 # Enum to hold on/off MIDI values
 class NOTE(IntEnum):

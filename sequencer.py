@@ -2,7 +2,7 @@ import rtmidi2
 import datetime
 import time
 from time import sleep
-from enums import LED, NOTE, MODE, PAD
+from enums import LED, NOTE, MODE, PAD, ARROW
 import copy
 
 class MidiSequence:
@@ -47,7 +47,7 @@ RECORDING_SEQUENCE = MidiSequence()
 SELECTED_SEQUENCES = set()
 
 cmd_touch = rtmidi2.MidiOut()
-cmd_touch.open_port(1)
+cmd_touch.open_port(0)
 
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
@@ -197,6 +197,10 @@ def initialize():
     set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
     set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
     set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
+    set_current_mode(ARROW.UP, ARROW.UP.Standby)
+    set_current_mode(ARROW.DOWN, ARROW.DOWN.Standby)
+    set_current_mode(ARROW.LEFT, ARROW.LEFT.Standby)
+    set_current_mode(ARROW.RIGHT, ARROW.RIGHT.Standby)
 
 
 initialize()
