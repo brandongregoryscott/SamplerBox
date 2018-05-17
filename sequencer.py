@@ -51,13 +51,10 @@ cmd_touch = rtmidi2.MidiOut()
 # Check for physical cmd touch using get_in_ports()
 if 'CMD Touch' in rtmidi2.get_in_ports():
     cmd_touch.open_port('CMD Touch')
-    print(cmd_touch.ports)
-
 else:
     # If the physical cmd touch pad is not present, we are emulating it
     # with a virtual midi port & Processing sketch to intercept signals
     cmd_touch.open_port('IAC Driver Processing')
-    print(cmd_touch.ports)
 
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
