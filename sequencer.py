@@ -35,7 +35,7 @@ class MidiEvent:
     def __str__(self):
         return str(self.__dict__)
 
-SRC_CMD_TOUCH = ['CMD Touch']
+SRC_CMD_TOUCH = ['CMD Touch', 'IAC Driver CMD Touch']
 SRC_MPK_MINI = ['LPK25', 'MPKmini2', 'VMPK Output']
 
 CIRCULAR_PADS, SQUARE_PADS, ALL_PADS = [], [], []
@@ -46,8 +46,18 @@ CHANNEL = 0
 RECORDING_SEQUENCE = MidiSequence()
 SELECTED_SEQUENCES = set()
 
+
 cmd_touch = rtmidi2.MidiOut()
-cmd_touch.open_port(0)
+# Check for physical cmd touch using get_in_ports()
+if 'CMD Touch' in rtmidi2.get_in_ports():
+    cmd_touch.open_port('CMD Touch')
+    print(cmd_touch.ports)
+
+else:
+    # If the physical cmd touch pad is not present, we are emulating it
+    # with a virtual midi port & Processing sketch to intercept signals
+    cmd_touch.open_port('IAC Driver Processing')
+    print(cmd_touch.ports)
 
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
@@ -79,6 +89,8 @@ def edit_button_handler(cmd, note, velocity, timestamp):
     print("In edit button handler: {} {} {} {}".format(cmd, note, velocity, timestamp))
 
 def select_button_handler(cmd, note, velocity, timestamp):
+    if velocity == 0:
+        return
     if MODE.SELECT.Select in CURRENT_MODE.values():
         set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
     else:
@@ -193,7 +205,10 @@ def set_pad_status(pad, status):
 
 def initialize():
     initialize_pads()
-    flash_leds(ALL_PADS, LED.Green, 2)
+    # Processing sketch doesn't seem to handle send_noteon_many very well
+    # So we'll only flash the LEDs with the physical controller
+    if 'CMD Touch' in rtmidi2.get_in_ports():
+        flash_leds(ALL_PADS, LED.Green, 2)
     set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
     set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
     set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
