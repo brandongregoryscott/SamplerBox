@@ -4,6 +4,8 @@ import time
 from time import sleep
 from enums import LED, NOTE, MODE, PAD, ARROW
 import copy
+from subprocess import Popen
+import os
 
 class MidiSequence:
     def __init__(self):
@@ -54,6 +56,8 @@ if 'CMD Touch' in rtmidi2.get_in_ports():
 else:
     # If the physical cmd touch pad is not present, we are emulating it
     # with a virtual midi port & Processing sketch to intercept signals
+    pid = Popen(["/usr/local/bin/processing-java", "--sketch={}/{}".format(os.getcwd(), "VirtualCMDTouch"), "--run"])
+    sleep(3)
     cmd_touch.open_port('IAC Driver Processing')
 
 mpk_mini = rtmidi2.MidiOut()
@@ -81,11 +85,20 @@ def record_button_handler(cmd, note, velocity, timestamp):
         set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
 
 def edit_button_handler(cmd, note, velocity, timestamp):
+    global CURRENT_MODE
     if velocity == 0:
         return
     print("In edit button handler: {} {} {} {}".format(cmd, note, velocity, timestamp))
+    if MODE.EDIT.Pitch in CURRENT_MODE.values():
+        print('Setting edit mode back to standby')
+        set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
+    else:
+        print('Setting edit mode to pitch')
+        set_current_mode(MODE.EDIT, MODE.EDIT.Pitch)
+
 
 def select_button_handler(cmd, note, velocity, timestamp):
+    global CURRENT_MODE
     if velocity == 0:
         return
     if MODE.SELECT.Select in CURRENT_MODE.values():
@@ -116,9 +129,13 @@ def square_pad_handler(cmd, note, velocity, timestamp):
         else:
             print('No sequence at pad {}'.format(note))
     # Commenting out the play/pause toggle until the selection is sorted out
-    # if MODE.RECORD.Standby in CURRENT_MODE.values():
-    #     if note in SEQUENCES.keys():
-    #         set_sequence_status(note)
+    if MODE.RECORD.Standby in CURRENT_MODE.values():
+        if note in SEQUENCES.keys():
+            if SEQUENCES[note].status == PAD.On:
+                set_pad_status(note, PAD.Off)
+            else:
+                set_pad_status(note, PAD.On)
+
 
 CURRENT_MODE = {
     MODE.RECORD: MODE.RECORD.Standby,
@@ -196,7 +213,12 @@ def set_current_mode(mode, status):
     cmd_touch.send_noteon(CHANNEL, mode, status)
 
 def set_pad_status(pad, status):
+    global SEQUENCES
     cmd_touch.send_noteon(CHANNEL, pad, status)
+    if status == PAD.On:
+        SEQUENCES[pad].playing = True
+    elif status == PAD.Off:
+        SEQUENCES[pad].playing = False
     SEQUENCES[pad].status = status
 
 

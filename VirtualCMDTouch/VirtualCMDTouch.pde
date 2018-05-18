@@ -10,6 +10,7 @@ HDrawable clicked;
 MidiBus midiBus;
 HashMap<Integer, Integer> colorMap;
 void setup() {
+  frameRate(5); // 5 FPS should be fine
   size(450, 450);
   H.init(this).background(#202020).autoClear(true);
   smooth();
