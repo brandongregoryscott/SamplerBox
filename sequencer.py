@@ -134,6 +134,25 @@ def square_pad_handler(cmd, note, velocity, timestamp):
             else:
                 set_pad_status(note, PAD.On)
 
+def arrow_pad_handler(cmd, note, velocity, timestamp):
+    if velocity == 0:
+        return
+    global CURRENT_MODE
+    if MODE.EDIT.Pitch in CURRENT_MODE.values():
+        global SEQUENCES
+        if note == ARROW.UP or note == ARROW.DOWN:
+            flash_led(note, LED.DimOrange, count=2, delay=0.1, off=False)
+            for pad in SELECTED_SEQUENCES:
+                sequence = SEQUENCES.get(pad)
+                flash_led(pad, LED.DimOrange, count=2, delay=0.1, off=False)
+                # flash_leds(sequence.events, LED.DimOrange, count=2, delay=0.1, off=False)
+                for event in sequence.events:
+                    if note == ARROW.UP:
+                        event.note += 1
+                    else:
+                        event.note -= 1
+
+            # set_current_mode(ARROW.UP, LED)
 
 CURRENT_MODE = {
     MODE.RECORD: MODE.RECORD.Standby,
@@ -142,6 +161,10 @@ CURRENT_MODE = {
 }
 
 BUTTON_SWITCH = {
+    int(ARROW.UP): arrow_pad_handler,
+    int(ARROW.DOWN): arrow_pad_handler,
+    int(ARROW.LEFT): arrow_pad_handler,
+    int(ARROW.RIGHT): arrow_pad_handler,
     int(MODE.RECORD): record_button_handler,
     int(MODE.EDIT): edit_button_handler,
     int(MODE.SELECT): select_button_handler
@@ -191,7 +214,7 @@ def initialize_pads():
     ALL_PADS = CIRCULAR_PADS + SQUARE_PADS
 
 
-def flash_leds(pads, color, count=5, delay=0.3):
+def flash_leds(pads, color, count=5, delay=0.3, off=True):
     velocities = []
     channels = []
     for note in pads:
@@ -202,6 +225,17 @@ def flash_leds(pads, color, count=5, delay=0.3):
         sleep(delay)
         cmd_touch.send_noteoff_many(channels, pads)
         sleep(delay)
+    if not off:
+        cmd_touch.send_noteon_many(channels, pads, velocities)
+
+def flash_led(pad, color, count=5, delay=0.3, off=True):
+    for i in range(0, count):
+        cmd_touch.send_noteon(CHANNEL, pad, color)
+        sleep(delay)
+        cmd_touch.send_noteoff(CHANNEL, pad)
+        sleep(delay)
+    if not off:
+        cmd_touch.send_noteon(CHANNEL, pad, color)
 
 
 def set_current_mode(mode, status):
@@ -228,10 +262,10 @@ def initialize():
     set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
     set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
     set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
-    set_current_mode(ARROW.UP, ARROW.UP.Standby)
-    set_current_mode(ARROW.DOWN, ARROW.DOWN.Standby)
-    set_current_mode(ARROW.LEFT, ARROW.LEFT.Standby)
-    set_current_mode(ARROW.RIGHT, ARROW.RIGHT.Standby)
+    set_current_mode(ARROW.UP, LED.DimOrange)
+    set_current_mode(ARROW.DOWN, LED.DimOrange)
+    set_current_mode(ARROW.LEFT, LED.DimOrange)
+    set_current_mode(ARROW.RIGHT, LED.DimOrange)
 
 
 initialize()
