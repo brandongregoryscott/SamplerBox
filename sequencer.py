@@ -85,22 +85,19 @@ def record_button_handler(cmd, note, velocity, timestamp):
         set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
 
 def edit_button_handler(cmd, note, velocity, timestamp):
-    global CURRENT_MODE
     if velocity == 0:
         return
-    print("In edit button handler: {} {} {} {}".format(cmd, note, velocity, timestamp))
-    if MODE.EDIT.Pitch in CURRENT_MODE.values():
-        print('Setting edit mode back to standby')
-        set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
-    else:
-        print('Setting edit mode to pitch')
+    global CURRENT_MODE
+    if MODE.EDIT.Standby in CURRENT_MODE.values():
         set_current_mode(MODE.EDIT, MODE.EDIT.Pitch)
+    elif MODE.EDIT.Pitch in CURRENT_MODE.values():
+        set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
 
 
 def select_button_handler(cmd, note, velocity, timestamp):
-    global CURRENT_MODE
     if velocity == 0:
         return
+    global CURRENT_MODE
     if MODE.SELECT.Select in CURRENT_MODE.values():
         set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
     else:
@@ -129,7 +126,8 @@ def square_pad_handler(cmd, note, velocity, timestamp):
         else:
             print('No sequence at pad {}'.format(note))
     # Commenting out the play/pause toggle until the selection is sorted out
-    if MODE.RECORD.Standby in CURRENT_MODE.values():
+    if MODE.RECORD.Standby in CURRENT_MODE.values() \
+            and MODE.SELECT.Select not in CURRENT_MODE.values():
         if note in SEQUENCES.keys():
             if SEQUENCES[note].status == PAD.On:
                 set_pad_status(note, PAD.Off)
@@ -150,7 +148,6 @@ BUTTON_SWITCH = {
 }
 
 def cmd_touch_handler(cmd, note, velocity, timestamp):
-
     try:
         BUTTON_SWITCH[note](cmd, note, velocity, timestamp)
     except KeyError:
