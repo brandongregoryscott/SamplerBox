@@ -93,9 +93,13 @@ def edit_button_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
     global CURRENT_MODE
+    global SELECTED_SEQUENCES
     if MODE.EDIT.Standby in CURRENT_MODE.values():
         set_current_mode(MODE.EDIT, MODE.EDIT.Pitch)
     elif MODE.EDIT.Pitch in CURRENT_MODE.values():
+        for sequence in SELECTED_SEQUENCES:
+            flash_led(sequence, PAD.Off, count=1, delay=0, off=False)
+        SELECTED_SEQUENCES.clear()
         set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
 
 
