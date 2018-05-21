@@ -8,6 +8,7 @@ from subprocess import Popen
 import os
 import thread
 
+
 class MidiSequence:
     def __init__(self):
         self.events = []
@@ -19,6 +20,7 @@ class MidiSequence:
         for event in self.events:
             this.append(event.__dict__)
         return str(this)
+
 
 class MidiEvent:
     def __init__(self, cmd, note, velocity, timestamp, sleeptime):
@@ -64,6 +66,7 @@ else:
 mpk_mini = rtmidi2.MidiOut()
 mpk_mini.open_port('SamplerBoxLoop')
 
+
 def record_button_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
@@ -85,6 +88,7 @@ def record_button_handler(cmd, note, velocity, timestamp):
         RECORDING_SEQUENCE = MidiSequence()
         set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
 
+
 def edit_button_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
@@ -103,6 +107,7 @@ def select_button_handler(cmd, note, velocity, timestamp):
         set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
     else:
         set_current_mode(MODE.SELECT, MODE.SELECT.Select)
+
 
 def square_pad_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
@@ -135,6 +140,7 @@ def square_pad_handler(cmd, note, velocity, timestamp):
             else:
                 set_pad_status(note, PAD.On)
 
+
 def arrow_pad_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
@@ -152,7 +158,6 @@ def arrow_pad_handler(cmd, note, velocity, timestamp):
                     else:
                         event.note -= 1
 
-            # set_current_mode(ARROW.UP, LED)
 
 CURRENT_MODE = {
     MODE.RECORD: MODE.RECORD.Standby,
@@ -170,6 +175,7 @@ BUTTON_SWITCH = {
     int(MODE.SELECT): select_button_handler
 }
 
+
 def cmd_touch_handler(cmd, note, velocity, timestamp):
     try:
         BUTTON_SWITCH[note](cmd, note, velocity, timestamp)
@@ -184,6 +190,7 @@ def mpk_mini_handler(cmd, note, velocity, timestamp):
         if len(RECORDING_SEQUENCE.events) > 0:
             sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
         RECORDING_SEQUENCE.events.append(MidiEvent(cmd, note, velocity, timestamp, sleeptime))
+
 
 def callback(src, msg, ts):
     cmd = msg[0]
@@ -248,6 +255,7 @@ def set_current_mode(mode, status):
     global CURRENT_MODE
     CURRENT_MODE[mode] = status
     cmd_touch.send_noteon(CHANNEL, mode, status)
+
 
 def set_pad_status(pad, status):
     global SEQUENCES
