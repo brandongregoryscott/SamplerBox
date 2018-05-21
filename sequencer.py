@@ -6,6 +6,7 @@ from enums import LED, NOTE, MODE, PAD, ARROW
 import copy
 from subprocess import Popen
 import os
+import thread
 
 class MidiSequence:
     def __init__(self):
@@ -144,8 +145,7 @@ def arrow_pad_handler(cmd, note, velocity, timestamp):
             flash_led(note, LED.DimOrange, count=2, delay=0.1, off=False)
             for pad in SELECTED_SEQUENCES:
                 sequence = SEQUENCES.get(pad)
-                flash_led(pad, LED.DimOrange, count=2, delay=0.1, off=False)
-                # flash_leds(sequence.events, LED.DimOrange, count=2, delay=0.1, off=False)
+                flash_led(pad, PAD.Selected, count=2, delay=0.1, off=False)
                 for event in sequence.events:
                     if note == ARROW.UP:
                         event.note += 1
@@ -228,7 +228,9 @@ def flash_leds(pads, color, count=5, delay=0.3, off=True):
     if not off:
         cmd_touch.send_noteon_many(channels, pads, velocities)
 
-def flash_led(pad, color, count=5, delay=0.3, off=True):
+
+# Private threaded method
+def __flash_led(pad, color, count, delay, off):
     for i in range(0, count):
         cmd_touch.send_noteon(CHANNEL, pad, color)
         sleep(delay)
@@ -236,6 +238,10 @@ def flash_led(pad, color, count=5, delay=0.3, off=True):
         sleep(delay)
     if not off:
         cmd_touch.send_noteon(CHANNEL, pad, color)
+
+
+def flash_led(pad, color, count=5, delay=0.3, off=True):
+    thread.start_new_thread(__flash_led, (pad, color, count, delay, off))
 
 
 def set_current_mode(mode, status):
