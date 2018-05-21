@@ -149,7 +149,7 @@ def arrow_pad_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
     global CURRENT_MODE
-    if MODE.EDIT.Pitch in CURRENT_MODE.values():
+    if CURRENT_MODE[MODE.EDIT] == MODE.EDIT.Pitch:
         global SEQUENCES
         if note == ARROW.UP or note == ARROW.DOWN:
             flash_led(note, LED.DimOrange, count=2, delay=0.1, off=False)
