@@ -12,11 +12,11 @@ Website: www.samplerbox.org
 
 SamplerBox works with the RaspberryPi's built-in soundcard, but it is recommended to use a USB DAC (such as [this 6€ one](http://www.ebay.fr/itm/1Pc-PCM2704-5V-Mini-USB-Alimente-Sound-Carte-DAC-decodeur-Board-pr-ordinateur-PC-/231334667385?pt=LH_DefaultDomain_71&hash=item35dc9ee479)) for better sound quality.
 
-1. Install the required dependencies (Python-related packages and audio libraries):
+1. Install the required dependencies (Python 2.7, related packages and audio libraries):
 
   ~~~
   sudo apt-get update ; sudo apt-get -y install git python-dev python-pip python-numpy cython python-smbus portaudio19-dev libportaudio2 libffi-dev
-  sudo pip install rtmidi-python pyaudio cffi sounddevice
+  sudo pip install rtmidi2 pyaudio cffi sounddevice enum34
   ~~~
 
 2. Download SamplerBox and build it with: 
