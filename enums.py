@@ -43,6 +43,7 @@ class EDIT:
     def __init__(self):
         self.Standby = LED.DimYellow
         self.Pitch = LED.DimOrange
+        self.Speed = LED.DimGreen
 
     def __trunc__(self):
         # Returns the integer representation of the mode button

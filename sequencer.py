@@ -72,9 +72,9 @@ def record_button_handler(cmd, note, velocity, timestamp):
         return
     global CURRENT_MODE
     global RECORDING_SEQUENCE
-    if MODE.RECORD.Standby in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Standby:
         set_current_mode(MODE.RECORD, MODE.RECORD.Record)
-    elif MODE.RECORD.Record in CURRENT_MODE.values():
+    elif CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Record:
         if len(RECORDING_SEQUENCE.events) > 0:
             print('Finished recording sequence')
             print(str(RECORDING_SEQUENCE))
@@ -83,7 +83,7 @@ def record_button_handler(cmd, note, velocity, timestamp):
         else:
             print('No events recorded. Going back to standby')
             set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
-    elif MODE.RECORD.Pending in CURRENT_MODE.values():
+    elif CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Pending:
         print('Erasing sequence')
         RECORDING_SEQUENCE = MidiSequence()
         set_current_mode(MODE.RECORD, MODE.RECORD.Standby)
@@ -94,12 +94,14 @@ def edit_button_handler(cmd, note, velocity, timestamp):
         return
     global CURRENT_MODE
     global SELECTED_SEQUENCES
-    if MODE.EDIT.Standby in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Standby:
         set_current_mode(MODE.EDIT, MODE.EDIT.Pitch)
-    elif MODE.EDIT.Pitch in CURRENT_MODE.values():
+    elif CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Pitch:
         for sequence in SELECTED_SEQUENCES:
             flash_led(sequence, PAD.Off, count=1, delay=0, off=False)
         SELECTED_SEQUENCES.clear()
+        set_current_mode(MODE.EDIT, MODE.EDIT.Speed)
+    elif CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Speed:
         set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
 
 
@@ -107,7 +109,7 @@ def select_button_handler(cmd, note, velocity, timestamp):
     if velocity == 0:
         return
     global CURRENT_MODE
-    if MODE.SELECT.Select in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.SELECT) == MODE.SELECT.Select:
         set_current_mode(MODE.SELECT, MODE.SELECT.Standby)
     else:
         set_current_mode(MODE.SELECT, MODE.SELECT.Select)
@@ -118,11 +120,11 @@ def square_pad_handler(cmd, note, velocity, timestamp):
         return
     global CURRENT_MODE
     global RECORDING_SEQUENCE
-    if MODE.RECORD.Pending in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Pending:
         print('Assigning sequence to {}'.format(note))
         SEQUENCES[note] = copy.deepcopy(RECORDING_SEQUENCE)
         set_pad_status(note, PAD.Off)
-    elif MODE.SELECT.Select in CURRENT_MODE.values():
+    elif CURRENT_MODE.get(MODE.SELECT) == MODE.SELECT.Select:
         if note in SEQUENCES.keys():
             if SEQUENCES[note].status == PAD.Selected:
                 print('Unselecting sequence {}'.format(note))
@@ -136,8 +138,8 @@ def square_pad_handler(cmd, note, velocity, timestamp):
         else:
             print('No sequence at pad {}'.format(note))
     # Commenting out the play/pause toggle until the selection is sorted out
-    if MODE.RECORD.Standby in CURRENT_MODE.values() \
-            and MODE.SELECT.Select not in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Standby \
+            and CURRENT_MODE.get(MODE.SELECT) != MODE.SELECT.Select :
         if note in SEQUENCES.keys():
             if SEQUENCES[note].status == PAD.On:
                 set_pad_status(note, PAD.Off)
@@ -189,7 +191,7 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
 
 
 def mpk_mini_handler(cmd, note, velocity, timestamp):
-    if MODE.RECORD.Record in CURRENT_MODE.values():
+    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Record:
         sleeptime = timestamp - timestamp
         if len(RECORDING_SEQUENCE.events) > 0:
             sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
