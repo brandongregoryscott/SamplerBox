@@ -29,9 +29,11 @@ class MidiEvent:
         self.velocity = velocity
         self.timestamp = timestamp
         self.sleeptime = sleeptime
+        self.speed_modifier = 1.0
 
     def play(self):
-        sleep(self.sleeptime.seconds + self.sleeptime.microseconds / 1000000.0)
+        sleeptime = ((self.sleeptime.seconds + self.sleeptime.microseconds / 1000000.0) * self.speed_modifier)
+        sleep(sleeptime)
         if self.cmd == NOTE.On:
             mpk_mini.send_noteon(1, self.note, self.velocity)
         elif self.cmd == NOTE.Off:
@@ -41,7 +43,7 @@ class MidiEvent:
         return str(self.__dict__)
 
 SRC_CMD_TOUCH = ['CMD Touch', 'IAC Driver CMD Touch']
-SRC_MPK_MINI = ['LPK25', 'MPKmini2', 'VMPK Output']
+SRC_MPK_MINI = ['LPK25', 'MPKmini2', 'VMPK Output', 'nanoKONTROL2 SLIDER/KNOB']
 
 CIRCULAR_PADS, SQUARE_PADS, ALL_PADS = [], [], []
 SEQUENCES = dict()
@@ -97,9 +99,11 @@ def edit_button_handler(cmd, note, velocity, timestamp):
     if CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Standby:
         set_current_mode(MODE.EDIT, MODE.EDIT.Pitch)
     elif CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Pitch:
-        for sequence in SELECTED_SEQUENCES:
-            flash_led(sequence, PAD.Off, count=1, delay=0, off=False)
-        SELECTED_SEQUENCES.clear()
+        # TODO: Figure out a good way to clear all selected sequences without cycling thru modes
+        # for sequence in SELECTED_SEQUENCES:
+        #     flash_led(sequence, PAD.Off, count=1, delay=0, off=False)
+        # SELECTED_SEQUENCES.clear()
+        print("Setting current mode to speed")
         set_current_mode(MODE.EDIT, MODE.EDIT.Speed)
     elif CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Speed:
         set_current_mode(MODE.EDIT, MODE.EDIT.Standby)
@@ -164,6 +168,16 @@ def arrow_pad_handler(cmd, note, velocity, timestamp):
                     else:
                         event.note -= 1
 
+def knob_handler(cmd, note, velocity, timestamp):
+    global CURRENT_MODE
+    if CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Speed:
+        global SELECTED_SEQUENCES
+        global SEQUENCES
+        for pad in SELECTED_SEQUENCES:
+            sequence = SEQUENCES.get(pad)
+            for event in sequence.events:
+                event.speed_modifier = velocity / 64.0
+
 
 CURRENT_MODE = {
     MODE.RECORD: MODE.RECORD.Standby,
@@ -191,11 +205,14 @@ def cmd_touch_handler(cmd, note, velocity, timestamp):
 
 
 def mpk_mini_handler(cmd, note, velocity, timestamp):
-    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Record:
-        sleeptime = timestamp - timestamp
-        if len(RECORDING_SEQUENCE.events) > 0:
-            sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
-        RECORDING_SEQUENCE.events.append(MidiEvent(cmd, note, velocity, timestamp, sleeptime))
+    if cmd != NOTE.Knob:
+        if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Record:
+            sleeptime = timestamp - timestamp
+            if len(RECORDING_SEQUENCE.events) > 0:
+                sleeptime = timestamp - RECORDING_SEQUENCE.events[-1].timestamp
+            RECORDING_SEQUENCE.events.append(MidiEvent(cmd, note, velocity, timestamp, sleeptime))
+    else:
+        knob_handler(cmd, note, velocity, timestamp)
 
 
 def callback(src, msg, ts):

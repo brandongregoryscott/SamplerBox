@@ -78,3 +78,4 @@ class MODE:
 class NOTE(IntEnum):
     On = int(144)
     Off = int(128)
+    Knob = int(176)
