@@ -65,8 +65,13 @@ else:
     sleep(3)
     cmd_touch.open_port('IAC Driver Processing')
 
-mpk_mini = rtmidi2.MidiOut()
-mpk_mini.open_port('SamplerBoxLoop')
+# Try to open the SamplerBoxLoop port.
+try:
+    mpk_mini = rtmidi2.MidiOut()
+    mpk_mini.open_port('SamplerBoxLoop')
+except:
+    # If not found, fallback to open the virtual MPKmini2Loop port for use in a DAW
+    mpk_mini.open_port('IAC Driver MPKmini2Loop')
 
 
 def record_button_handler(cmd, note, velocity, timestamp):
@@ -120,6 +125,18 @@ def select_button_handler(cmd, note, velocity, timestamp):
 
 
 def square_pad_handler(cmd, note, velocity, timestamp):
+    global CURRENT_MODE
+    global RECORDING_SEQUENCE
+
+    if CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Pitch \
+            or CURRENT_MODE.get(MODE.EDIT) == MODE.EDIT.Speed:
+        if note in SELECTED_SEQUENCES:
+            print("Removed {}".format(note))
+            SELECTED_SEQUENCES.remove(note)
+        else:
+            print("Temporarily selected {}".format(note))
+            SELECTED_SEQUENCES.add(note)
+        return
     if velocity == 0:
         return
     global CURRENT_MODE
@@ -141,8 +158,7 @@ def square_pad_handler(cmd, note, velocity, timestamp):
             print('Selected sequences: {}'.format(SELECTED_SEQUENCES))
         else:
             print('No sequence at pad {}'.format(note))
-    # Commenting out the play/pause toggle until the selection is sorted out
-    if CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Standby \
+    elif CURRENT_MODE.get(MODE.RECORD) == MODE.RECORD.Standby \
             and CURRENT_MODE.get(MODE.SELECT) != MODE.SELECT.Select :
         if note in SEQUENCES.keys():
             if SEQUENCES[note].status == PAD.On:
