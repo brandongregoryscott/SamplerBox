@@ -42,6 +42,7 @@ USE_I2C_7SEGMENTDISPLAY = config.USE_I2C_7SEGMENTDISPLAY         # Set to True t
 USE_BUTTONS = config.USE_BUTTONS                     # Set to True to use momentary buttons (connected to RaspberryPi's GPIO pins) to change preset
 MAX_POLYPHONY = config.MAX_POLYPHONY                      # This can be set higher, but 80 is a safe value
 IGNORE_PORTS = config.IGNORE_PORTS # MIDI Ports to ignore input from
+PANIC_KEY = config.PANIC_KEY # Note to stop all playing sounds
 
 
 
@@ -236,6 +237,11 @@ def MidiCallback(message, time_stamp):
 
     elif (messagetype == 11) and (note == 64) and (velocity >= 64):  # sustain pedal on
         sustain = True
+
+    if (messagetype == 9) and (note == PANIC_KEY):
+        global playingsounds
+        playingsounds = []
+
 
 
 #########################################
